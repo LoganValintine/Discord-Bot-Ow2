@@ -8,19 +8,19 @@ bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
 
 
     
-@bot.command(name='statcheck', help='format !statcheck <your battle.net tag here> -> includes hashtags + hero.')
+@bot.command(name='statcheck', help='format !statcheck <your battle.net tag here> -> includes hashtags + hero + stat.')
 
-async def statcheck(ctx, battledotname='', hero=''):
+async def statcheck(ctx, battledotname='', hero='', stat=''):
     if battledotname == '':
         await ctx.send("Must enter a valid battle.net tag including the # symbol.")
         
     params = {'gamemode' : 'competitive'}
-    dps_heroes = ['ashe', 'bastion', 'cassidy', 'echo', 'genji', 'hanzo', 'junkrat', 'mei', 'pharah', 
-                  'reaper', 'soldier76', 'sombra', 'symmetra', 'soujourn' 'torbjorn', 'tracer', 'widowmaker', 'freja', 'vendetta', 'venture']
-    tank_heroes = ['dva', 'orisa', 'ramattra', 'reinhardt', 'roadhog', 'sigma', 'winston', 'wreckingball', 'zarya', 'junkerqueen', 'mauga', 'hazard' ]
-    sup_heroes = ['ana', 'baptiste', 'brigitte', 'lúcio', 'mercy', 'moira', 'zenyatta', 'kiriko', 'lifeweaver', 'juno', 'illari', 'wuyang']
+    heroes = ['ashe', 'bastion', 'cassidy', 'echo', 'genji', 'hanzo', 'junkrat', 'mei', 'pharah', 
+                  'reaper', 'soldier76', 'sombra', 'symmetra', 'soujourn' 'torbjorn', 'tracer', 'widowmaker', 'freja', 'vendetta', 'venture',
+                  'dva', 'orisa', 'ramattra', 'reinhardt', 'roadhog', 'sigma', 'winston', 'wreckingball', 'zarya', 'junkerqueen', 'mauga', 'hazard', 
+                  'ana', 'baptiste', 'brigitte', 'lúcio', 'mercy', 'moira', 'zenyatta', 'kiriko', 'lifeweaver', 'juno', 'illari', 'wuyang']
     hero_stats = False
-    if hero in dps_heroes or hero in tank_heroes or hero in sup_heroes:
+    if hero in heroes:
         hero_stats = True
 
         username = battledotname.replace('#', '-')
@@ -36,20 +36,61 @@ async def statcheck(ctx, battledotname='', hero=''):
             if user_data == {} or summary_data == {}:
                 await ctx.send("account is set to private")
     
-    
-            for i in range(len(dps_heroes)):
-                dps_data = {}
-                dps_data['hero'] = dps_heroes[i]
-                try:
-                    dps_data['games_played'] = user_data[dps_heroes[i]]['game']['games_played']
-                except:
-                    dps_data['games_played'] = 0
-
-                if hero == dps_heroes[i]:
-                    await ctx.send(hero + ' stats in comp:\n'
-                                   + 'Games Played: ' + str(dps_data['games_played']))
-                    
+            data = 0
             
+            for i in range(len(heroes)):
+                if hero == heroes[i]:
+                    percentage = False
+                    match(stat):
+                        case "games":
+                            try:
+                                data = user_data[heroes[i]]['game']['games_played']
+                            except:
+                                data = 0
+                        case "wr":
+                            percentage = True
+                            try:
+                                data = user_data[heroes[i]]['game']['win_percentage']
+                            except:
+                                data = 0
+                               
+                        case "wins":
+                            try:
+                                data = user_data[heroes[i]]['game']['games_won']
+                            except:
+                                data = 0
+                        case "elims":
+                            try:
+                                data = user_data[heroes[i]]['combat']['eliminations']
+                            except:
+                                data = 0
+                        case "losses":
+                            try:
+                                data = user_data[heroes[i]]['game']['games_lost']
+                            except:
+                                data = 0
+                                 
+                                 
+                    if percentage:
+                        data = round(data, 2)
+                        data = str(data) + "%"
+                        
+                    await ctx.send(username+ "'s " + stat + " for " + hero + " is: " + str(data))  
+                    
+@bot.command(name='helpstatcheck', help='Provides information on how to use the statcheck command.')
+async def helpstatcheck(ctx):
+    help_message = (
+        "To use the !statcheck command, use the following format:\n"
+        "`!statcheck <Battle.net Tag> <Hero> <Stat>`\n\n"
+        "Where:\n"
+        "- `<Battle.net Tag>`: Your full Battle.net tag including the # symbol (e.g., Player#1234).\n"
+        "- `<Hero>`: The hero you want to check stats for.\n"
+        "- `<Stat>`: The specific stat you want to check. Valid stats include:\n"
+        "  **games** (total games played), **wr** (win rate percentage), **wins** (total wins), **elims** (total eliminations), **losses** (total losses).\n\n"
+        "Example usage:\n"
+        "`!statcheck Player#1234 tracer wr` - This will return the win rate for Tracer for the specified player."
+    )
+    await ctx.send(help_message)            
 
 bot.run(CONFIG.BOT_TOKEN)
 
