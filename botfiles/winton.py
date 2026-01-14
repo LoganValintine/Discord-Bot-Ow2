@@ -25,15 +25,13 @@ async def statcheck(ctx, battledotname='', hero='', stat=''):
 
         username = battledotname.replace('#', '-')
         user_stats = requests.get(url='https://overfast-api.tekrop.fr/players/' + username + '/stats/career', params=params)
-        stats_summary = requests.get(url='https://overfast-api.tekrop.fr/players/' + username + '/stats/summary', params=params)
         
-        if user_stats.status_code != 200 or stats_summary.status_code != 200:
+        if user_stats.status_code != 200:
             await ctx.send("Could not retrieve stats. Please ensure the Battle.net tag is correct. (case sensitive)")
         else:
             user_data = user_stats.json()
-            summary_data = stats_summary.json()
 
-            if user_data == {} or summary_data == {}:
+            if user_data == {}:
                 await ctx.send("account is set to private")
     
             data = 0
@@ -88,9 +86,69 @@ async def helpstatcheck(ctx):
         "- `<Stat>`: The specific stat you want to check. Valid stats include:\n"
         "  **games** (total games played), **wr** (win rate percentage), **wins** (total wins), **elims** (total eliminations), **losses** (total losses).\n\n"
         "Example usage:\n"
-        "`!statcheck Player#1234 tracer wr` - This will return the win rate for Tracer for the specified player."
+        "`!statcheck Player#1234 tracer wr` - This will return the win rate for Tracer for the specified player.\n"
+        "**PLEASE NOTE: I have not included Console as I am too lazy to accomdate Zay lmao**"
     )
     await ctx.send(help_message)            
+
+@bot.command (name='rankcheck', help='format !rankcheck <your battle.net tag here> -> includes hashtags + role (dps, tank, support).')
+async def rankcheck(ctx, battledotname='', role=''):
+    if battledotname == '':
+        await ctx.send("Must enter a valid battle.net tag including the # symbol.")
+    
+    if role not in ['dps', 'tank', 'support']:
+        await ctx.send("Role must be one of the following: dps, tank, support.")
+    
+    params = {'gamemode' : 'competitive'}
+    
+    username = battledotname.replace('#', '-')
+    stats_summary = requests.get(url='https://overfast-api.tekrop.fr/players/' + username + '/summary')
+        
+    if stats_summary.status_code != 200:
+        await ctx.send("Could not retrieve stats. Please ensure the Battle.net tag is correct. (case sensitive)")
+    else:
+        summary_data = stats_summary.json()
+
+        if summary_data == {}:
+            await ctx.send("account is set to private")
+            
+        rank = ''
+        tier = 0
+        
+        
+        
+        match role:
+            case 'tank':
+                try:
+                    rank = summary_data['competitive']['pc']['tank']['division']
+                    tier = summary_data['competitive']['pc']['tank']['tier']
+                except:
+                    rank = ''
+                    tier = 0
+                       
+            case 'support':
+                try:
+                    rank = summary_data['competitive']['pc']['support']['division']
+                    tier = summary_data['competitive']['pc']['support']['tier']
+                except:
+                    rank = ''
+                    tier = 0
+                
+            case 'dps':
+                try:
+                    rank = summary_data['competitive']['pc']['damage']['division']
+                    tier = summary_data['competitive']['pc']['damage']['tier']
+                except:
+                    rank = ''
+                    tier = 0
+    await ctx.send(username + "'s rank for " + role + " is: " + rank + " " + str(tier))        
+        
+            
+            
+        
+
+
+
 
 bot.run(CONFIG.BOT_TOKEN)
 
